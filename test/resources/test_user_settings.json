@@ -1,0 +1,25 @@
+{
+  "data": {
+    "thumb_size": "orig",
+    "per_page": "64",
+    "purity": [
+      "sfw"
+    ],
+    "categories": [
+      "general"
+    ],
+    "resolutions": [
+      ""
+    ],
+    "aspect_ratios": [
+      ""
+    ],
+    "toplist_range": "3d",
+    "tag_blacklist": [
+      "test_tag"
+    ],
+    "user_blacklist": [
+      ""
+    ]
+  }
+}

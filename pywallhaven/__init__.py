@@ -1,0 +1,1 @@
+from pywallhaven import wallhaven

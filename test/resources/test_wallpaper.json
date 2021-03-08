@@ -1,0 +1,161 @@
+{
+  "data": {
+    "id": "6k3oox",
+    "url": "https:\/\/wallhaven.cc\/w\/6k3oox",
+    "short_url": "https:\/\/whvn.cc\/6k3oox",
+    "uploader": {
+      "username": "PhoenixBlood",
+      "group": "User",
+      "avatar": {
+        "200px": "https:\/\/wallhaven.cc\/images\/user\/avatar\/200\/165333_6696ef045b5d7ceb1e207ea364922639857a9787856e074fc3bbb7e1a70a2e7a.jpg",
+        "128px": "https:\/\/wallhaven.cc\/images\/user\/avatar\/128\/165333_6696ef045b5d7ceb1e207ea364922639857a9787856e074fc3bbb7e1a70a2e7a.jpg",
+        "32px": "https:\/\/wallhaven.cc\/images\/user\/avatar\/32\/165333_6696ef045b5d7ceb1e207ea364922639857a9787856e074fc3bbb7e1a70a2e7a.jpg",
+        "20px": "https:\/\/wallhaven.cc\/images\/user\/avatar\/20\/165333_6696ef045b5d7ceb1e207ea364922639857a9787856e074fc3bbb7e1a70a2e7a.jpg"
+      }
+    },
+    "views": 232797,
+    "favorites": 1362,
+    "source": "https:\/\/www.artstation.com\/artwork\/9eYa8L",
+    "purity": "sfw",
+    "category": "general",
+    "dimension_x": 1920,
+    "dimension_y": 1080,
+    "resolution": "1920x1080",
+    "ratio": "1.78",
+    "file_size": 609366,
+    "file_type": "image\/jpeg",
+    "created_at": "2020-04-29 00:38:27",
+    "colors": [
+      "#424153",
+      "#000000",
+      "#999999",
+      "#333399",
+      "#ea4c88"
+    ],
+    "path": "https:\/\/w.wallhaven.cc\/full\/6k\/wallhaven-6k3oox.jpg",
+    "thumbs": {
+      "large": "https:\/\/th.wallhaven.cc\/lg\/6k\/6k3oox.jpg",
+      "original": "https:\/\/th.wallhaven.cc\/orig\/6k\/6k3oox.jpg",
+      "small": "https:\/\/th.wallhaven.cc\/small\/6k\/6k3oox.jpg"
+    },
+    "tags": [
+      {
+        "id": 64,
+        "name": "sunset",
+        "alias": "before sunset, dusk, Sunset at sea, sunsets",
+        "category_id": 5,
+        "category": "Nature",
+        "purity": "sfw",
+        "created_at": "2014-02-02 19:48:23"
+      },
+      {
+        "id": 122,
+        "name": "sunlight",
+        "alias": "sun flare, sun shine, sunshine",
+        "category_id": 5,
+        "category": "Nature",
+        "purity": "sfw",
+        "created_at": "2014-02-05 00:19:25"
+      },
+      {
+        "id": 8644,
+        "name": "rooftops",
+        "alias": "rooftop, roof top",
+        "category_id": 24,
+        "category": "Architecture",
+        "purity": "sfw",
+        "created_at": "2014-09-28 15:09:41"
+      },
+      {
+        "id": 48868,
+        "name": "Aenami",
+        "alias": "Alena Aenami",
+        "category_id": 47,
+        "category": "Artists",
+        "purity": "sfw",
+        "created_at": "2016-07-16 17:33:54"
+      },
+      {
+        "id": 190,
+        "name": "clouds",
+        "alias": "cloud, cloudy",
+        "category_id": 5,
+        "category": "Nature",
+        "purity": "sfw",
+        "created_at": "2014-02-09 00:52:31"
+      },
+      {
+        "id": 50586,
+        "name": "powerlines",
+        "alias": "",
+        "category_id": 39,
+        "category": "Technology",
+        "purity": "sfw",
+        "created_at": "2016-08-28 15:13:15"
+      },
+      {
+        "id": 245,
+        "name": "stars",
+        "alias": "",
+        "category_id": 45,
+        "category": "Space",
+        "purity": "sfw",
+        "created_at": "2014-02-11 03:57:22"
+      },
+      {
+        "id": 479,
+        "name": "digital art",
+        "alias": "Cgi, Digital 2D, digital artwork, digital compositions, graphic, graphics, Motion Design",
+        "category_id": 25,
+        "category": "Digital",
+        "purity": "sfw",
+        "created_at": "2014-02-17 08:14:11"
+      },
+      {
+        "id": 323,
+        "name": "artwork",
+        "alias": "art, Art design, artworks",
+        "category_id": 2,
+        "category": "Art & Design",
+        "purity": "sfw",
+        "created_at": "2014-02-11 09:18:43"
+      },
+      {
+        "id": 17,
+        "name": "city",
+        "alias": "beautiful city, citi, cities",
+        "category_id": 6,
+        "category": "Location",
+        "purity": "sfw",
+        "created_at": "2014-02-02 12:45:59"
+      },
+      {
+        "id": 13,
+        "name": "cityscape",
+        "alias": "Big City, cityscapes",
+        "category_id": 43,
+        "category": "Cities",
+        "purity": "sfw",
+        "created_at": "2014-02-02 12:42:58"
+      },
+      {
+        "id": 1321,
+        "name": "horizon",
+        "alias": "K\u00e1rm\u00e1n line, skyline, skylines",
+        "category_id": 41,
+        "category": "Landscapes",
+        "purity": "sfw",
+        "created_at": "2014-04-09 00:54:40"
+      },
+      {
+        "id": 436,
+        "name": "planet",
+        "alias": "planets",
+        "category_id": 45,
+        "category": "Space",
+        "purity": "sfw",
+        "created_at": "2014-02-16 03:08:09"
+      }
+    ]
+  }
+}
