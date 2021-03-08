@@ -3,7 +3,7 @@ from urllib.parse import quote_plus, quote
 from typing import Tuple
 
 __regex_map = {
-    'q': re.compile(r'(^id:\d+$)|(^like:[a-zA-Z0-9]{6}$)|(^((?!id:)|(?!like:))*$)'),
+    'q': re.compile(r'(^id:\d+$)|(^like:[a-zA-Z0-9]{6}$)|(^(?!(.*id:.*)|(.*like:.*)).*$)'),
     'categories': re.compile(r'^[01]{3}$'),
     'purity': re.compile(r'^[01]{3}$'),
     'sorting': re.compile(r'^(date_added)|(relevance)|(random)|(views)|(favorites)|(toplist)$'),
@@ -33,7 +33,7 @@ def create_parameter_string(**kwargs) -> str:
         for k, v in kwargs.items():
             v = str(v)  # cast v to string
             validate_parameter(k, v)
-            params.append(str(k) + "=" + str(v))
+            params.append(k + "=" + v)
         string += '&'.join(params)
     return string
 

@@ -71,6 +71,14 @@ class TestValidateParameter(unittest.TestCase):
             with self.assertRaises(TypeError):
                 validate_parameter('topRange', x)
 
+    def test_q_valid(self):
+        for x in ['tree', '+tree', 'like:123abc', 'id:54']:
+            self.assertEqual(('q', x), validate_parameter('q', x))
+
+    def test_q_invalid(self):
+        for x in ['id:14 +tree', 'green like:123abc', 'id:4r']:
+            with self.assertRaises(ValueError):
+                validate_parameter('q', x)
 
 class TestPurityListAsNumericString(unittest.TestCase):
     def test_valid(self):

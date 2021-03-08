@@ -19,7 +19,7 @@ class Uploader:
 
 @dataclass(frozen=True)
 class Tag:
-    id: str
+    id: int
     name: str = field(compare=False)
     alias: str = field(compare=False)  # this is a comma separated string of aliases
     category_id: str = field(compare=False)

@@ -1,1 +1,1 @@
-from pywallhaven import wallhaven
+from pywallhaven.wallhaven import *
