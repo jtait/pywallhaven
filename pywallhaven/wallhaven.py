@@ -93,6 +93,9 @@ class Meta:
 
 
 class Wallhaven(object):
+    """
+    The main API reference object.  All calls are made from an instance of this.
+    """
     def __init__(self, api_key: str = None):
         self.__api_key = api_key
         if self.__api_key:
@@ -127,6 +130,7 @@ class Wallhaven(object):
     def get_wallpaper(self, wallpaper_id: str) -> Wallpaper:
         """
         Make a request to the wallpaper endpoint given the wallpaper ID
+
         :param wallpaper_id: The ID of the wallpaper to fetch
         :return: A Wallpaper object
         """
@@ -137,6 +141,7 @@ class Wallhaven(object):
     def get_tag(self, tag_id: int) -> Tag:
         """
         Make a request to the tag endpoint given the tag ID
+
         :param tag_id: The ID of the tag to fetch
         :return: A Tag object
         """
@@ -147,6 +152,7 @@ class Wallhaven(object):
     def get_user_settings(self) -> UserSettings:
         """
         Make a request to the settings endpoint. Requires the API key is set in the Wallhaven object
+
         :return: A UserSettings object
         """
         if not self.__api_key:
@@ -159,6 +165,7 @@ class Wallhaven(object):
         """
         Return the collections of a given user. Returns the collections of the specified user if username is given.
         If no username is given, the API key must be specified in the Wallhaven object
+
         :param username: If given, returns the collections of this username
         :return: A list of Collection objects
         """
@@ -181,6 +188,7 @@ class Wallhaven(object):
         Makes a request to the collections endpoint for a specific collection, given by the collection_id and username.
         If the collection spans more than one page you will need to make multiple requests. The Meta object returned
         gives page information, which can be used to make enough calls to return the complete collection.
+
         :param username: The username of the user that owns the collection
         :param collection_id: The ID of the collection
         :param kwargs: parameters to add to the API request - supports purity and page
@@ -202,6 +210,7 @@ class Wallhaven(object):
         See the helper method util.build_q_string to help build valid strings. The q parameter is very permissive,
         so invalid queries are possible. Invalid parameters/keys are checked and will throw an error, but the value of
         the q parameter is difficult to validate by its nature.
+
         :param kwargs: Parameters for the query string in the URL. See https://wallhaven.cc/help/api for allowed values.
         :return: A list of Wallpapers and a Meta object
         """

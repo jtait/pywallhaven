@@ -22,6 +22,7 @@ def create_parameter_string(**kwargs) -> str:
     """
     Uses given parameters to return a valid url query string
     Validates parameters to ensure the Wallhaven API will recognize them
+
     :param kwargs: An unpacked dict of parameters
     :return: A properly formatted string to append to the endpoint url
     """
@@ -40,6 +41,7 @@ def create_parameter_string(**kwargs) -> str:
 def validate_parameter(key, value) -> Tuple[str, str]:
     """
     This helper class will validate a parameter for a search query to prevent sending invalid queries
+
     :param key:
     :param value:
     :return: The key and value pair, both as strings, for convenience
@@ -69,6 +71,7 @@ def purity_list_as_numeric_string(purity_list: list) -> str:
     query to match that setting, you can pass the list to this method, and use the result in a new query.
 
     This is just a convenience method to allow easier automation in some cases.
+
     :param purity_list: A valid list of purities.
     :return: A 'numerical' string (str) of the purities
     """
@@ -84,6 +87,7 @@ def build_q_string(include_tags: list = None, exclude_tags: list = None, usernam
     """
     A helper method to allow easier and more reliable construction of the string for the q parameter in search.
     Doesn't support like: or id: parameters - these should be used on their own
+
     :param include_tags: A list of tags to include in the search results
     :param exclude_tags: A list of tags to exclude from the search results
     :param username: Limits search results to wallpapers uploaded by this username
