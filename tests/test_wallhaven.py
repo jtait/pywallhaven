@@ -7,7 +7,7 @@ import responses
 import requests
 import dataclasses
 
-from pywallhaven.wallhaven import Wallpaper, Tag, UserSettings, Uploader, Wallhaven, Meta, Collection
+from pywallhaven import Wallpaper, Tag, UserSettings, Uploader, Wallhaven, Meta, Collection
 
 
 def get_resource_file(file_name: str):

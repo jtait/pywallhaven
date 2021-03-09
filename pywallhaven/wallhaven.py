@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
-from pywallhaven import util
+from pywallhaven import util, exceptions
 
 
 @dataclass(frozen=True)
@@ -116,6 +116,8 @@ class Wallhaven(object):
             raise requests.exceptions.RequestException('Bad Request for url {}'.format(url))
         elif r.status_code in [500, 502, 503]:
             raise requests.exceptions.ConnectionError('Server error {}'.format(str(r.status_code)))
+        elif r.status_code == 429:
+            raise exceptions.APILimitError('API request speed limit reached')
         elif r.status_code != 200:
             raise requests.exceptions.HTTPError('something broke')
         else:
