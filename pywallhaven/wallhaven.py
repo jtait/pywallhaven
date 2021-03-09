@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Union
 
 import requests
 from dataclasses import dataclass, field
@@ -29,6 +29,10 @@ class Tag:
 
     @property
     def created_at_datetime(self):
+        """
+
+        :return: the created_at field as a properly formatted :class:`datetime`
+        """
         return datetime.strptime(self.created_at, "%Y-%m-%d %H:%M:%S")
 
 
@@ -52,12 +56,36 @@ class Wallpaper:
     colors: list = field(compare=False)
     path: str = field(compare=False)
     thumbs: list = field(compare=False)
-    tags: list = field(compare=False, default_factory=list)  # 'search' results don't include tags on wallpapers
-    uploader: dict = field(compare=False, default_factory=dict)  # collections don't include uploader in wallpapers
+
+    # 'search' results don't include tags on wallpapers
+    tags: List[dict] = field(compare=False, default_factory=list)
+
+    # collections don't include uploader in wallpapers
+    uploader: Dict[str, Union[str, dict]] = field(compare=False, default_factory=dict)
 
     @property
     def created_at_datetime(self):
+        """
+
+        :return: the created_at field as a properly formatted :class:`datetime`
+        """
         return datetime.strptime(self.created_at, "%Y-%m-%d %H:%M:%S")
+
+    @property
+    def tags_as_class_list(self):
+        """
+
+        :return: the tags as a list of :class:`Tag` objects instead of as a list of dicts
+        """
+        return [Tag(**x) for x in self.tags]
+
+    @property
+    def uploader_as_class(self):
+        """
+
+        :return: the uploader as an instance of :class:`Uploader` instead of as a dict
+        """
+        return Uploader(**self.uploader)
 
 
 @dataclass(frozen=True)
@@ -134,7 +162,7 @@ class Wallhaven(object):
         Make a request to the wallpaper endpoint given the wallpaper ID
 
         :param wallpaper_id: The ID of the wallpaper to fetch
-        :return: A Wallpaper object
+        :return: A :class:`Wallpaper` object
         """
         endpoint = 'https://wallhaven.cc/api/v1/w/{id}'.format(id=wallpaper_id)
         wallpaper = Wallpaper(**self.__get_endpoint(endpoint).get('data'))
@@ -145,7 +173,7 @@ class Wallhaven(object):
         Make a request to the tag endpoint given the tag ID
 
         :param tag_id: The ID of the tag to fetch
-        :return: A Tag object
+        :return: A :class:`Tag` object
         """
         endpoint = 'https://wallhaven.cc/api/v1/tag/{id}'.format(id=tag_id)
         tag = Tag(**self.__get_endpoint(endpoint).get('data'))
@@ -155,7 +183,8 @@ class Wallhaven(object):
         """
         Make a request to the settings endpoint. Requires the API key is set in the Wallhaven object
 
-        :return: A UserSettings object
+        :return: A :class:`UserSettings` object
+        :raises AttributeError: if the :class:`Wallhaven` instance was created without an API key
         """
         if not self.__api_key:
             raise AttributeError('no API key supplied')
@@ -169,7 +198,9 @@ class Wallhaven(object):
         If no username is given, the API key must be specified in the Wallhaven object
 
         :param username: If given, returns the collections of this username
-        :return: A list of Collection objects
+        :return: A list of :class:`Collection` objects
+        :raises AttributeError: if no username is provided and the :class:`Wallhaven` instance was created without
+            an API key
         """
         if username:
             endpoint = 'https://wallhaven.cc/api/v1/collections/{username}'.format(username=username)
@@ -194,7 +225,8 @@ class Wallhaven(object):
         :param username: The username of the user that owns the collection
         :param collection_id: The ID of the collection
         :param kwargs: parameters to add to the API request - supports purity and page
-        :return: A list of Wallpapers and a Meta object
+        :return: A list of :class:`Wallpaper` and a :class:`Meta` object
+        :raises ValueError: if :py:attr:`**kwargs` contains an invalid parameter=value combination
         """
         endpoint = 'https://wallhaven.cc/api/v1/collections/{username}/{id}'.format(username=username, id=collection_id)
         try:
@@ -208,13 +240,19 @@ class Wallhaven(object):
 
     def search(self, **kwargs) -> Tuple[List[Wallpaper], Meta]:
         """
-        Makes a search using the given kwargs. The allowed parameters are described at https://wallhaven.cc/help/api.
-        See the helper method util.build_q_string to help build valid strings. The q parameter is very permissive,
-        so invalid queries are possible. Invalid parameters/keys are checked and will throw an error, but the value of
-        the q parameter is difficult to validate by its nature.
+        Makes a search using the given kwargs. The allowed parameters are described at
+        https://wallhaven.cc/help/api#search.
 
-        :param kwargs: Parameters for the query string in the URL. See https://wallhaven.cc/help/api for allowed values.
-        :return: A list of Wallpapers and a Meta object
+        See the helper method :py:func:`pywallhaven.util.build_q_string` to help build valid strings. The q parameter
+        is very permissive, so invalid queries are possible.
+
+        Invalid parameters/keys are checked and will throw an error, but the value of the q parameter is difficult to
+        validate by its nature, so an invalid string may still be passed to the API.
+
+        :param kwargs: Parameters for the query string in the URL.
+            See https://wallhaven.cc/help/api#search for allowed values.
+        :return: A list of :class:`Wallpaper` and a :class:`Meta` object
+        :raises ValueError: if :py:attr:`**kwargs` contains an invalid parameter=value combination
         """
         endpoint = 'https://wallhaven.cc/api/v1/search'
         try:

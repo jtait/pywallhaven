@@ -47,6 +47,15 @@ class TestValidateParameter(unittest.TestCase):
             with self.assertRaises(ValueError):
                 validate_parameter('purity', x)
 
+    def test_categories_valid(self):
+        for x in ['000', '001', '010', '011', '100', '101', '110', '111']:
+            self.assertEqual(('categories', x), validate_parameter('categories', x))
+
+    def test_category_invalid(self):
+        for x in ['1111', '1', '2', '11']:
+            with self.assertRaises(ValueError):
+                validate_parameter('categories', x)
+
     def test_order_valid(self):
         for x in ['asc', 'desc']:
             self.assertEqual(('order', x), validate_parameter('order', x))
@@ -79,6 +88,7 @@ class TestValidateParameter(unittest.TestCase):
         for x in ['id:14 +tree', 'green like:123abc', 'id:4r']:
             with self.assertRaises(ValueError):
                 validate_parameter('q', x)
+
 
 class TestPurityListAsNumericString(unittest.TestCase):
     def test_valid(self):

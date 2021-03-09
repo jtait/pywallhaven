@@ -42,9 +42,12 @@ def validate_parameter(key, value) -> Tuple[str, str]:
     """
     This helper class will validate a parameter for a search query to prevent sending invalid queries
 
-    :param key:
-    :param value:
+    :param key: the key or parameter for the url query, as per https://wallhaven.cc/help/api#search
+    :param value: the value for the given parameter
     :return: The key and value pair, both as strings, for convenience
+    :raises KeyError: if an invalid parameter is given
+    :raises TypeError: if either key or value is not a string
+    :raises ValueError: if the value fails validation according to the expected regular expression
     """
     if not type(key) == str:
         raise TypeError("key must be a str object")
@@ -93,6 +96,7 @@ def build_q_string(include_tags: list = None, exclude_tags: list = None, usernam
     :param username: Limits search results to wallpapers uploaded by this username
     :param image_type: limit search results by image type - must be png, jpg, or jpeg
     :return: A processed string that will work as a q parameter for the API search call
+    :raises ValueError: if an invalid image type is given
     """
     string = ""
     if include_tags:
