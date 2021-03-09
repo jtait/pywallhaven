@@ -2,14 +2,14 @@ import unittest
 
 import responses
 
-from pywallhaven.exceptions import APILimitError
+from pywallhaven.exceptions import RateLimitError
 from pywallhaven import Wallhaven
 
 
 class TestAPILimitError(unittest.TestCase):
     def test_init(self):
-        with self.assertRaises(APILimitError):
-            raise APILimitError
+        with self.assertRaises(RateLimitError):
+            raise RateLimitError
 
 
 class TestMockEndpoint(unittest.TestCase):
@@ -20,7 +20,7 @@ class TestMockEndpoint(unittest.TestCase):
     def test_error_code_response(self):
         w = Wallhaven()
         responses.add(responses.GET, 'https://wallhaven.cc/api/v1/search', status=429)
-        with self.assertRaises(APILimitError):
+        with self.assertRaises(RateLimitError):
             w.search()
 
         responses.reset()

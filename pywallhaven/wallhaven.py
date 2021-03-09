@@ -117,7 +117,7 @@ class Wallhaven(object):
         elif r.status_code in [500, 502, 503]:
             raise requests.exceptions.ConnectionError('Server error {}'.format(str(r.status_code)))
         elif r.status_code == 429:
-            raise exceptions.APILimitError('API request speed limit reached')
+            raise exceptions.RateLimitError('API request speed limit reached')
         elif r.status_code != 200:
             raise requests.exceptions.HTTPError('something broke')
         else:

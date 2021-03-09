@@ -1,2 +1,2 @@
-class APILimitError(Exception):
+class RateLimitError(Exception):
     pass
