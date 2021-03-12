@@ -3,6 +3,9 @@ Python API for wallhaven.cc
 
 This is an implementation of the [API](https://wallhaven.cc/help/api) for [wallhaven.cc](https://wallhaven.cc/). It provides a simple interface to access the data provided by the API to enable development of tools/programs.
 
+#### Documentation
+Documentation is available at [pywallhaven.readthedocs.io](https://pywallhaven.readthedocs.io/en/latest/).
+
 #### Disclaimer
 This project and its author has no affiliation with [wallhaven.cc](https://wallhaven.cc/), and as such this project should be considered "unofficial". Use of wallhaven.cc is subject to their [Terms of Service](https://wallhaven.cc/terms) and [Privacy Policy](https://wallhaven.cc/privacy-policy).
 
@@ -22,3 +25,4 @@ This project uses these libraries:
 - wallhaven.cc (https://wallhaven.cc/)
 - official API reference (https://wallhaven.cc/help/api)
 - issue tracker (https://github.com/jtait/pywallhaven/issues)
+- documentation (https://pywallhaven.readthedocs.io/en/latest/)
