@@ -1,6 +1,7 @@
 import json
+import warnings
 from datetime import datetime
-from typing import List, Tuple, Dict, Union
+from typing import List, Tuple, Dict, Union, Generator
 
 import requests
 from dataclasses import dataclass, field
@@ -123,7 +124,12 @@ class Meta:
 class Wallhaven(object):
     """
     The main API reference object.  All calls are made from an instance of this.
+
+    :param api_key: An API key from the website. Will be sent in the headers of all requests.
+
+
     """
+
     def __init__(self, api_key: str = None):
         self.__api_key = api_key
         if self.__api_key:
@@ -216,21 +222,29 @@ class Wallhaven(object):
             collections = [Collection(**x) for x in collections]
         return collections
 
-    def get_collection(self, username: str, collection_id: int, **kwargs) -> Tuple[List[Wallpaper], Meta]:
+    def get_collection(self, username: str, collection_id: int, page: int = 1, **kwargs) -> Tuple[
+        List[Wallpaper], Meta]:
         """
+        .. deprecated:: 0.2
+            Use :py:meth:`get_collection_pages` instead.
+
         Makes a request to the collections endpoint for a specific collection, given by the collection_id and username.
+
         If the collection spans more than one page you will need to make multiple requests. The Meta object returned
         gives page information, which can be used to make enough calls to return the complete collection.
 
+        :param page: The page of the request. If a query results in a multiple page response, the page must be specified.
         :param username: The username of the user that owns the collection
         :param collection_id: The ID of the collection
         :param kwargs: parameters to add to the API request - supports purity and page
         :return: A list of :class:`Wallpaper` and a :class:`Meta` object
         :raises ValueError: if :py:attr:`**kwargs` contains an invalid parameter=value combination
         """
+        warnings.warn('get_collection is deprecated in favour of get_collection_pages', category=DeprecationWarning)
+
         endpoint = 'https://wallhaven.cc/api/v1/collections/{username}/{id}'.format(username=username, id=collection_id)
         try:
-            endpoint += util.create_parameter_string(**kwargs)
+            endpoint += util.create_parameter_string(**kwargs, page=page)
         except ValueError as e:
             raise e
         search_result = self.__get_endpoint(endpoint)
@@ -238,8 +252,11 @@ class Wallhaven(object):
         meta = Meta(**search_result.get('meta'))
         return wallpapers, meta
 
-    def search(self, **kwargs) -> Tuple[List[Wallpaper], Meta]:
+    def search(self, page: int = 1, **kwargs) -> Tuple[List[Wallpaper], Meta]:
         """
+        .. deprecated:: 0.2
+            Use :py:meth:`get_search_pages` instead.
+
         Makes a search using the given kwargs. The allowed parameters are described at
         https://wallhaven.cc/help/api#search.
 
@@ -249,17 +266,114 @@ class Wallhaven(object):
         Invalid parameters/keys are checked and will throw an error, but the value of the q parameter is difficult to
         validate by its nature, so an invalid string may still be passed to the API.
 
+        If the search result spans more than one page you will need to make multiple requests. The Meta object returned
+        gives page information, which can be used to make enough calls to return the complete collection.
+
+        :param page: The page of the request. If a query results in a multiple page response, the page must be specified.
         :param kwargs: Parameters for the query string in the URL.
             See https://wallhaven.cc/help/api#search for allowed values.
         :return: A list of :class:`Wallpaper` and a :class:`Meta` object
         :raises ValueError: if :py:attr:`**kwargs` contains an invalid parameter=value combination
         """
+        warnings.warn('search is deprecated in favour of get_search_pages', category=DeprecationWarning)
+
         endpoint = 'https://wallhaven.cc/api/v1/search'
         try:
-            endpoint += util.create_parameter_string(**kwargs)
+            endpoint += util.create_parameter_string(**kwargs, page=page)
         except ValueError as e:
             raise e
         search_result = self.__get_endpoint(endpoint)
         wallpapers = [Wallpaper(**x) for x in search_result.get('data')]
         meta = Meta(**search_result.get('meta'))
         return wallpapers, meta
+
+    def get_search_pages(self, **kwargs) -> Generator[Tuple[List[Wallpaper], Meta], None, None]:
+        """
+        Makes a search using the given kwargs. The allowed parameters are described at
+        https://wallhaven.cc/help/api#search.
+
+        Creates a generator iterator that will return all pages of a collection.
+
+        Use in a for loop such as::
+
+            for wallpapers, meta in Wallhaven().get_search_pages():
+                print(wallpapers)
+
+        See the helper method :py:func:`pywallhaven.util.build_q_string` to help build valid strings. The q parameter
+        is very permissive, so invalid queries are possible.
+
+        Invalid parameters/keys are checked and will throw an error, but the value of the q parameter is difficult to
+        validate by its nature, so an invalid string may still be passed to the API.
+
+
+        :param kwargs: Parameters for the query string in the URL.
+            See https://wallhaven.cc/help/api#search for allowed values.
+        :return: A generator iterator that provides a tuple of of a list of :class:`Wallpaper` and a :class:`Meta` object
+        :raises ValueError: if :py:attr:`**kwargs` contains an invalid parameter=value combination
+        :raises AttributeError: if page is included as a keyword argument
+        """
+
+        if 'page' in kwargs.keys():
+            raise AttributeError('cannot specify page as keyword argument, page is handled by generator')
+
+        search_endpoint = 'https://wallhaven.cc/api/v1/search'
+
+        last_page = 1
+        current_page = 1
+
+        while current_page <= last_page:
+            try:
+                endpoint = search_endpoint + util.create_parameter_string(**kwargs, page=current_page)
+            except ValueError as e:
+                raise e
+            search_result = self.__get_endpoint(endpoint)
+            wallpapers = [Wallpaper(**x) for x in search_result.get('data')]
+            meta = Meta(**search_result.get('meta'))
+
+            yield wallpapers, meta
+
+            last_page = meta.last_page
+            current_page += 1
+
+    def get_collection_pages(self, username: str, collection_id: int, **kwargs) -> Generator[
+        Tuple[List[Wallpaper], Meta], None, None]:
+        """
+        Makes a request to the collections endpoint for a specific collection, given by the collection_id and username.
+
+        Creates a generator iterator that will return all pages of a collection.
+
+        Use in a for loop such as::
+
+            for wallpapers, meta in Wallhaven().get_collection_pages():
+                print(wallpapers)
+
+        :param username: The username of the user that owns the collection
+        :param collection_id: The ID of the collection
+        :param kwargs: parameters to add to the API request - only supports purity
+        :return: A generator iterator that provides a tuple of of a list of :class:`Wallpaper` and a :class:`Meta` object
+        :raises ValueError: if :py:attr:`**kwargs` contains an invalid parameter=value combination
+        :raises AttributeError: if page is included as a keyword argument
+        """
+
+        if 'page' in kwargs.keys():
+            raise AttributeError('cannot specify page as keyword argument, page is handled by generator')
+
+        collections_endpoint = 'https://wallhaven.cc/api/v1/collections/{username}/{id}'.format(username=username,
+                                                                                                id=collection_id)
+
+        last_page = 1
+        current_page = 1
+
+        while current_page <= last_page:
+            try:
+                endpoint = collections_endpoint + util.create_parameter_string(**kwargs, page=current_page)
+            except ValueError as e:
+                raise e
+            search_result = self.__get_endpoint(endpoint)
+            wallpapers = [Wallpaper(**x) for x in search_result.get('data')]
+            meta = Meta(**search_result.get('meta'))
+
+            yield wallpapers, meta
+
+            last_page = meta.last_page
+            current_page += 1
