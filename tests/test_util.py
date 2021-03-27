@@ -108,12 +108,30 @@ class TestPurityListAsNumericString(unittest.TestCase):
 class TestBuildQString(unittest.TestCase):
     def test_valid(self):
         s = build_q_string(
-            include_tags=['trees', 'green', 'two words', 1],
+            include_tags=['trees', 'green', 'two words'],
             exclude_tags=['spruce'],
             username='test_user',
             image_type='png'
         )
-        self.assertEqual(s, '%20%2Btrees%20%2Bgreen%20%2Btwo+words%20%2B1%20-spruce @test_user type:png')
+        self.assertEqual('%20%2Btrees%20%2Bgreen%20%2B%22two%20words%22%20-spruce%20%40test_user%20type%3Apng', s)
+
+        s = build_q_string(
+            include_tags=['trees', 'green', 'two words'],
+            exclude_tags=['spruce trees'],
+            username='test_user',
+            image_type='png'
+        )
+        self.assertEqual(
+            '%20%2Btrees%20%2Bgreen%20%2B%22two%20words%22%20-%22spruce%20trees%22%20%40test_user%20type%3Apng',
+            s
+        )
+
+        s = build_q_string(
+            include_tags=['trees', 'green', 'two words'],
+            username='test_user',
+            image_type='png'
+        )
+        self.assertEqual('%20%2Btrees%20%2Bgreen%20%2B%22two%20words%22%20%40test_user%20type%3Apng', s)
 
     def test_invalid_image_type(self):
         with self.assertRaises(ValueError):
@@ -121,5 +139,22 @@ class TestBuildQString(unittest.TestCase):
                 include_tags=['trees', 'green', 'two words'],
                 exclude_tags=['spruce'],
                 username='test_user',
-                image_type='invalid'
+                image_type='invalid'  # the image type is invalid
+            )
+
+    def test_invalid_tag_type(self):
+        with self.assertRaises(TypeError):
+            build_q_string(
+                include_tags=['trees', 'green', 'two words', 1],  # the 1 should throw a TypeError
+                exclude_tags=['spruce'],
+                username='test_user',
+                image_type='png'
+            )
+
+        with self.assertRaises(TypeError):
+            build_q_string(
+                include_tags=['trees', 'green', 'two words'],  # the 1 should throw a TypeError
+                exclude_tags=['spruce', 1],
+                username='test_user',
+                image_type='png'
             )
