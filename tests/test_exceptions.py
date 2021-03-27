@@ -1,3 +1,8 @@
+"""
+Unit tests for pywallhaven.exceptions
+"""
+
+
 import unittest
 
 import responses
@@ -13,8 +18,15 @@ class TestAPILimitError(unittest.TestCase):
 
 
 class TestMockEndpoint(unittest.TestCase):
-    def tearDown(self):
-        responses.reset()
+    def setUp(self):
+        """
+        Helps cleanup responses after test runs to ensure clean state.
+        :return:
+        """
+        self.responses = responses.RequestsMock()
+        self.responses.start()
+        self.addCleanup(self.responses.stop)
+        self.addCleanup(self.responses.reset)
 
     @responses.activate
     def test_error_code_response(self):
@@ -22,5 +34,3 @@ class TestMockEndpoint(unittest.TestCase):
         responses.add(responses.GET, 'https://wallhaven.cc/api/v1/search', status=429)
         with self.assertRaises(RateLimitError):
             w.search()
-
-        responses.reset()

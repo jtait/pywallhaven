@@ -1,3 +1,8 @@
+"""
+Unit tests for pywallhaven.util
+"""
+
+
 import unittest
 
 from pywallhaven.util import create_parameter_string, validate_parameter, purity_list_as_numeric_string, build_q_string
