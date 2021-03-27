@@ -1,3 +1,8 @@
+"""
+Unit tests for pywallhaven.wallhaven
+"""
+
+
 import json
 import os
 import unittest
@@ -11,6 +16,11 @@ from pywallhaven import Wallpaper, Tag, UserSettings, Uploader, Wallhaven, Meta,
 
 
 def get_resource_file(file_name: str):
+    """
+    Helper method to grab resource file path
+    :param file_name: The basename of the file
+    :return: The full path to the file
+    """
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), 'resources', file_name)
 
 
@@ -23,6 +33,24 @@ class TestWallpaper(unittest.TestCase):
             self.assertIsInstance(Tag(**wallpaper.tags[0]), Tag)
             self.assertIsInstance(Uploader(**wallpaper.uploader), Uploader)
             self.assertIsInstance(wallpaper.created_at_datetime, datetime)
+
+    def test_tags_as_class_list(self):
+        with open(get_resource_file("test_wallpaper.json"), 'r') as fp:
+            wallpaper = Wallpaper(**json.load(fp)['data'])
+            for tag in wallpaper.tags_as_class_list:
+                self.assertIsInstance(tag, Tag)
+                self.assertIsInstance(tag.name, str)
+                self.assertIsInstance(tag.id, int)
+                self.assertIn(tag.purity, ['sfw', 'sketchy', 'nsfw'])
+
+    def test_uploader_as_class(self):
+        with open(get_resource_file("test_wallpaper.json"), 'r') as fp:
+            wallpaper = Wallpaper(**json.load(fp)['data'])
+            uploader = wallpaper.uploader_as_class
+            self.assertIsInstance(uploader, Uploader)
+            self.assertIsInstance(uploader.username, str)
+            self.assertIsInstance(uploader.group, str)
+            self.assertIsInstance(uploader.avatar, dict)
 
 
 class TestUserSettings(unittest.TestCase):
@@ -91,8 +119,15 @@ class TestCollectionEndpoint(unittest.TestCase):
 
 
 class TestMockEndpoint(unittest.TestCase):
-    def tearDown(self):
-        responses.reset()
+    def setUp(self):
+        """
+        Helps cleanup responses after test runs to ensure clean state.
+        :return:
+        """
+        self.responses = responses.RequestsMock()
+        self.responses.start()
+        self.addCleanup(self.responses.stop)
+        self.addCleanup(self.responses.reset)
 
     @responses.activate
     def test_error_code_response(self):
@@ -119,7 +154,6 @@ class TestMockEndpoint(unittest.TestCase):
         responses.add(responses.GET, 'https://wallhaven.cc/api/v1/search', body=requests.exceptions.ConnectionError())
         with self.assertRaises(requests.exceptions.ConnectionError):
             w.search()
-        responses.reset()
 
     @responses.activate
     def test_empty_response(self):
@@ -196,6 +230,22 @@ class TestMockEndpoint(unittest.TestCase):
             self.assertIsInstance(result_meta, Meta)
 
     @responses.activate
+    def test_valid_search_json_with_page_in_kwargs(self):
+        with open(get_resource_file("test_search.json"), 'r') as fp:
+            mock_json = json.load(fp)
+            responses.add(
+                responses.GET, 'https://wallhaven.cc/api/v1/search', status=200,
+                json=mock_json
+            )
+            w = Wallhaven()
+            result_wallpapers, result_meta = w.search(**{'page': 1})
+            self.assertEqual(dataclasses.asdict(result_meta), mock_json['meta'])
+            self.assertIsInstance(result_wallpapers, list)
+            for w in result_wallpapers:
+                self.assertIsInstance(w, Wallpaper)
+            self.assertIsInstance(result_meta, Meta)
+
+    @responses.activate
     def test_valid_collections_json(self):
         with open(get_resource_file("test_collections.json"), 'r') as fp:
             mock_json = json.load(fp)
@@ -241,3 +291,102 @@ class TestMockEndpoint(unittest.TestCase):
             for w in collection:
                 self.assertIsInstance(w, Wallpaper)
             self.assertIsInstance(meta, Meta)
+
+    @responses.activate
+    def test_valid_user_collection_json_with_page_in_kwargs(self):
+        with open(get_resource_file("test_user_collection.json"), 'r') as fp:
+            mock_json = json.load(fp)
+            username = 'test_user'
+            collection_id = 1
+            responses.add(
+                responses.GET, 'https://wallhaven.cc/api/v1/collections/{}/{}'.format(username, str(collection_id)),
+                status=200,
+                json=mock_json
+            )
+            w = Wallhaven()
+            collection, meta = w.get_collection(username, collection_id, **{'page': 1})
+            self.assertIsInstance(collection, list),
+            for w in collection:
+                self.assertIsInstance(w, Wallpaper)
+            self.assertIsInstance(meta, Meta)
+
+
+class TestPagedCollection(unittest.TestCase):
+    def setUp(self):
+        """
+        Helps cleanup responses after test runs to ensure clean state.
+        :return:
+        """
+        self.responses = responses.RequestsMock()
+        self.responses.start()
+        self.addCleanup(self.responses.stop)
+        self.addCleanup(self.responses.reset)
+
+    @responses.activate
+    def test_paged_collection(self):
+        username = 'test_user'
+        collection_id = 1
+        for i in range(1, 4):
+            with open(get_resource_file(os.path.join("test_paged_collection", f"page{i}.json")), 'r') as fp:
+                responses.add(
+                    responses.GET,
+                    f"https://wallhaven.cc/api/v1/collections/{username}/{collection_id}?page={i}",
+                    status=200,
+                    json=json.load(fp)
+                )
+        w = Wallhaven()
+        collection_pages = w.get_collection_pages(username, collection_id)
+        for wallpapers, meta in collection_pages:
+            self.assertIsInstance(meta, Meta)
+            for w in wallpapers:
+                self.assertIsInstance(w, Wallpaper)
+
+    def test_paged_collection_invalid_parameters(self):
+        w = Wallhaven()
+        username = 'test'
+        collection_id = 1
+        with self.assertRaises(KeyError):
+            next(w.get_collection_pages(username, collection_id, test_parameter='1111'))
+        with self.assertRaises(ValueError):
+            next(w.get_collection_pages(username, collection_id, purity='1111'))
+        with self.assertRaises(AttributeError):
+            next(w.get_collection_pages(username, collection_id, page='-1'))
+
+
+class TestPagedSearch(unittest.TestCase):
+    def setUp(self):
+        """
+        Helps cleanup responses after test runs to ensure clean state.
+        :return:
+        """
+        self.responses = responses.RequestsMock()
+        self.responses.start()
+        self.addCleanup(self.responses.stop)
+        self.addCleanup(self.responses.reset)
+
+    @responses.activate
+    def test_paged_search(self):
+        # cheat a bit and reuse the collection pages for testing the generator
+        for i in range(1, 4):
+            with open(get_resource_file(os.path.join("test_paged_collection", f"page{i}.json")), 'r') as fp:
+                responses.add(
+                    responses.GET,
+                    f"https://wallhaven.cc/api/v1/search?page={i}",
+                    status=200,
+                    json=json.load(fp)
+                )
+        w = Wallhaven()
+        pages = w.get_search_pages()
+        for wallpapers, meta in pages:
+            self.assertIsInstance(meta, Meta)
+            for w in wallpapers:
+                self.assertIsInstance(w, Wallpaper)
+
+    def test_paged_collection_invalid_parameters(self):
+        w = Wallhaven()
+        with self.assertRaises(KeyError):
+            next(w.get_search_pages(test_parameter='1111'))
+        with self.assertRaises(ValueError):
+            next(w.get_search_pages(purity='1111'))
+        with self.assertRaises(AttributeError):
+            next(w.get_search_pages(page='-1'))

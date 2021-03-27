@@ -1,6 +1,10 @@
+"""
+Utility functions useful for building queries.
+"""
+
 import re
-from urllib.parse import quote_plus, quote
-from typing import Tuple
+from typing import Tuple, List
+from urllib.parse import quote
 
 __regex_map = {
     'q': re.compile(r'(^id:\d+$)|(^like:[a-zA-Z0-9]{6}$)|(^(?!(.*id:.*)|(.*like:.*)).*$)'),
@@ -85,9 +89,13 @@ def purity_list_as_numeric_string(purity_list: list) -> str:
     return str(numerical_purity).zfill(3)
 
 
-def build_q_string(include_tags: list = None, exclude_tags: list = None, username: str = None,
+def build_q_string(include_tags: List[str] = None, exclude_tags: List[str] = None, username: str = None,
                    image_type: str = None) -> str:
     """
+    .. versionchanged:: 0.2
+        Modified the return string to return url-safe escaped characters (e.g. %2B instead of +),
+        as well as wrapping multi-word tags with quotes.
+
     A helper method to allow easier and more reliable construction of the string for the q parameter in search.
     Doesn't support like: or id: parameters - these should be used on their own
 
@@ -97,21 +105,30 @@ def build_q_string(include_tags: list = None, exclude_tags: list = None, usernam
     :param image_type: limit search results by image type - must be png, jpg, or jpeg
     :return: A processed string that will work as a q parameter for the API search call
     :raises ValueError: if an invalid image type is given
+    :raises TypeError: if an include_tag or exclude_tag is not a string
     """
     string = ""
     if include_tags:
-        include_tags = [quote_plus(str(t)) for t in include_tags]
-        string += quote(" +") + quote(" +").join(include_tags)
+        try:
+            include_tags = [f"\"{x}\"" if ' ' in x else x for x in include_tags]  # handle multi-word tags
+            include_tags = [quote(str(t)) for t in include_tags]
+            string += quote(" +") + quote(" +").join(include_tags)
+        except TypeError as e:
+            raise e
     if exclude_tags:
-        exclude_tags = [quote_plus(str(t)) for t in exclude_tags]
-        string += quote(" -") + quote(" -").join(exclude_tags)
+        try:
+            exclude_tags = [f"\"{x}\"" if ' ' in x else x for x in exclude_tags]  # handle multi-word tags
+            exclude_tags = [quote(str(t)) for t in exclude_tags]
+            string += quote(" -") + quote(" -").join(exclude_tags)
+        except TypeError as e:
+            raise e
     if username:
-        string += " @" + str(username)
+        string += quote(" @" + str(username))
     image_types = ['png', 'jpeg', 'jpg']
     if image_type:
         if image_type in image_types:
-            string += " type:" + image_type
+            string += quote(" type:" + image_type)
         else:
             raise ValueError('invalid type given, must be one of {}'.format(':'.join(image_types)))
 
-    return string.strip(" ")
+    return string.strip()
