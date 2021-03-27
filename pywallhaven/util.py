@@ -1,6 +1,10 @@
+"""
+Utility functions useful for building queries.
+"""
+
 import re
-from urllib.parse import quote
 from typing import Tuple, List
+from urllib.parse import quote
 
 __regex_map = {
     'q': re.compile(r'(^id:\d+$)|(^like:[a-zA-Z0-9]{6}$)|(^(?!(.*id:.*)|(.*like:.*)).*$)'),
