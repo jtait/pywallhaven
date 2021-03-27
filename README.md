@@ -18,7 +18,7 @@ Compatibility with the wallhaven.cc API is done on a best-effort basis, but chan
 This project uses these libraries:
 - [requests](https://pypi.org/project/requests/)
 - [urllib3](https://pypi.org/project/urllib3/)
-- [dataclasses](https://pypi.org/project/dataclasses/)
+- [dataclasses](https://pypi.org/project/dataclasses/) (for Python 3.6)
 - [responses](https://pypi.org/project/responses/) (for testing only)
 
 #### Links
