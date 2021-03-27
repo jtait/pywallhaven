@@ -333,6 +333,8 @@ class Wallhaven(object):
 
     def get_search_pages(self, **kwargs) -> Generator[Tuple[List[Wallpaper], Meta], None, None]:
         """
+        .. versionadded:: 0.2
+
         Makes a search using the given kwargs. The allowed parameters are described at
         https://wallhaven.cc/help/api#search.
 
@@ -348,7 +350,6 @@ class Wallhaven(object):
 
         Invalid parameters/keys are checked and will throw an error, but the value of the q parameter is difficult to
         validate by its nature, so an invalid string may still be passed to the API.
-
 
         :param kwargs: Parameters for the query string in the URL.
             See https://wallhaven.cc/help/api#search for allowed values.
@@ -383,6 +384,8 @@ class Wallhaven(object):
             self, username: str, collection_id: int, **kwargs
     ) -> Generator[Tuple[List[Wallpaper], Meta], None, None]:
         """
+        .. versionadded:: 0.2
+
         Makes a request to the collections endpoint for a specific collection, given by the collection_id and username.
 
         Creates a generator iterator that will return all pages of a collection.

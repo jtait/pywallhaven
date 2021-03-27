@@ -6,6 +6,7 @@ pywallhaven documentation
    :caption: Contents:
 
    readme
+   changelog
    pywallhaven/modules
 
 Indices and tables

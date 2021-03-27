@@ -92,6 +92,10 @@ def purity_list_as_numeric_string(purity_list: list) -> str:
 def build_q_string(include_tags: List[str] = None, exclude_tags: List[str] = None, username: str = None,
                    image_type: str = None) -> str:
     """
+    .. versionchanged:: 0.2
+        Modified the return string to return url-safe escaped characters (e.g. %2B instead of +),
+        as well as wrapping multi-word tags with quotes.
+
     A helper method to allow easier and more reliable construction of the string for the q parameter in search.
     Doesn't support like: or id: parameters - these should be used on their own
 
