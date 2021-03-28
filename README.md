@@ -19,6 +19,7 @@ This project uses these libraries:
 - [requests](https://pypi.org/project/requests/)
 - [urllib3](https://pypi.org/project/urllib3/)
 - [dataclasses](https://pypi.org/project/dataclasses/) (for Python 3.6)
+- [ratelimit](https://pypi.org/project/ratelimit/)
 - [responses](https://pypi.org/project/responses/) (for testing only)
 
 #### Links

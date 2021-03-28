@@ -1,3 +1,6 @@
+#### v0.3
+- use the [ratelimit](https://pypi.org/project/ratelimit/) library to limit API requests to 45 per minute, as per [the official docs](https://wallhaven.cc/help/api#limits)
+
 #### v0.2
 - added `Wallhaven.get_search_pages()` and `Wallhaven.get_collection_pages()`
     - these methods return generators that iterate through all pages in a response, rather than requiring a specific page as a parameter
