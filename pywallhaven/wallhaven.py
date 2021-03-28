@@ -11,6 +11,7 @@ import requests
 from dataclasses import dataclass, field
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
+from ratelimit import sleep_and_retry, limits
 
 from pywallhaven import util, exceptions
 
@@ -166,7 +167,13 @@ class Meta:
 
 class Wallhaven(object):
     """
+    .. versionchanged:: 0.3
+        Endpoint requests are now rate limited. The limit applies globally to all instances of :class:`Wallhaven`
+        The limit is 45 calls per minute, as per https://wallhaven.cc/help/api#limits
+
     The main API reference object.  All calls are made from an instance of this.
+
+    Requires an API key to access NSFW wallpapers, user settings, and private collections.
 
     :param api_key: An API key from the website. Will be sent in the headers of all requests.
     """
@@ -178,6 +185,8 @@ class Wallhaven(object):
         else:
             self.__headers = {}
 
+    @sleep_and_retry
+    @limits(calls=45, period=60)
     def __get_endpoint(self, url):
         with requests.Session() as s:
             retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[429])

@@ -5,6 +5,7 @@ Unit tests for pywallhaven.wallhaven
 
 import json
 import os
+import time
 import unittest
 from datetime import datetime
 
@@ -390,3 +391,36 @@ class TestPagedSearch(unittest.TestCase):
             next(w.get_search_pages(purity='1111'))
         with self.assertRaises(AttributeError):
             next(w.get_search_pages(page='-1'))
+
+
+class TestRateLimiting(unittest.TestCase):
+    def setUp(self):
+        """
+        Helps cleanup responses after test runs to ensure clean state.
+        :return:
+        """
+        self.responses = responses.RequestsMock()
+        self.responses.start()
+        self.addCleanup(self.responses.stop)
+        self.addCleanup(self.responses.reset)
+
+    @responses.activate
+    def test_single_instance_call_more_than_limit(self):
+        with open(get_resource_file("test_user_collection.json"), 'r') as fp:
+            mock_json = json.load(fp)
+        username = 'test_user'
+        collection_id = 1
+        w = Wallhaven()
+
+        start_time = time.time()
+        for _ in range(46):
+
+            responses.add(
+                responses.GET, 'https://wallhaven.cc/api/v1/collections/{}/{}'.format(username, str(collection_id)),
+                status=200,
+                json=mock_json
+            )
+            w.get_collection(username, collection_id, **{'page': 1})
+        end_time = time.time()
+
+        self.assertGreater(end_time - start_time, 60)
