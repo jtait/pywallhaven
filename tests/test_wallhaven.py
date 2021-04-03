@@ -358,21 +358,52 @@ class TestPagedSearch(unittest.TestCase):
         self.addCleanup(self.responses.reset)
 
     @responses.activate
-    def test_paged_search(self):
-        # cheat a bit and reuse the collection pages for testing the generator
+    def test_paged_search_no_given_seed(self):
+        seed = "abc123"
         for i in range(1, 4):
-            with open(get_resource_file(os.path.join("test_paged_collection", f"page{i}.json")), 'r') as fp:
-                responses.add(
-                    responses.GET,
-                    f"https://wallhaven.cc/api/v1/search?page={i}",
-                    status=200,
-                    json=json.load(fp)
-                )
+            with open(get_resource_file(os.path.join("test_paged_search", f"with_seed_page_{i}.json")), 'r') as fp:
+                if i == 1:
+                    responses.add(
+                        responses.GET,
+                        f"https://wallhaven.cc/api/v1/search?page={i}",
+                        status=200,
+                        json=json.load(fp)
+                    )
+                else:
+                    responses.add(
+                        responses.GET,
+                        f"https://wallhaven.cc/api/v1/search?page={i}&seed={seed}",
+                        status=200,
+                        json=json.load(fp)
+                    )
         w = Wallhaven()
         wallpaper_list = []
         pages = w.get_search_pages()
         for wallpapers, meta in pages:
             self.assertIsInstance(meta, Meta)
+            self.assertEqual(meta.seed, seed)
+            for w in wallpapers:
+                self.assertIsInstance(w, Wallpaper)
+            wallpaper_list.extend(wallpapers)
+        self.assertEqual(len(wallpaper_list), 72)
+
+    @responses.activate
+    def test_paged_search_with_seed(self):
+        seed = "abc123"
+        for i in range(1, 4):
+            with open(get_resource_file(os.path.join("test_paged_search", f"with_seed_page_{i}.json")), 'r') as fp:
+                responses.add(
+                    responses.GET,
+                    f"https://wallhaven.cc/api/v1/search?page={i}&seed={seed}",
+                    status=200,
+                    json=json.load(fp)
+                )
+        w = Wallhaven()
+        wallpaper_list = []
+        pages = w.get_search_pages(seed=seed)
+        for wallpapers, meta in pages:
+            self.assertIsInstance(meta, Meta)
+            self.assertEqual(meta.seed, seed)
             for w in wallpapers:
                 self.assertIsInstance(w, Wallpaper)
             wallpaper_list.extend(wallpapers)

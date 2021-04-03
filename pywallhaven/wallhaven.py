@@ -331,6 +331,9 @@ class Wallhaven(object):
         """
         .. versionadded:: 0.2
 
+        .. versionchanged:: 0.4
+            Now correctly uses the returned seed (if present) to continue future requests.
+
         Makes a search using the given kwargs. The allowed parameters are described at
         https://wallhaven.cc/help/api#search.
 
@@ -361,10 +364,17 @@ class Wallhaven(object):
 
         last_page = 1
         current_page = 1
+        try:
+            seed = kwargs.pop('seed')
+        except KeyError:
+            seed = None
 
         while current_page <= last_page:
             try:
-                endpoint = search_endpoint + util.create_parameter_string(**kwargs, page=current_page)
+                if seed is not None:
+                    endpoint = search_endpoint + util.create_parameter_string(**kwargs, page=current_page, seed=seed)
+                else:
+                    endpoint = search_endpoint + util.create_parameter_string(**kwargs, page=current_page)
             except ValueError as e:
                 raise e
             search_result = self.get_endpoint(endpoint)
@@ -375,6 +385,7 @@ class Wallhaven(object):
 
             last_page = meta.last_page
             current_page += 1
+            seed = meta.seed
 
     def get_collection_pages(
             self, username: str, collection_id: int, **kwargs
