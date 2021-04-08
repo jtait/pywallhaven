@@ -8,6 +8,7 @@ pywallhaven documentation
    readme
    changelog
    pywallhaven/modules
+   rate_limit
 
 Indices and tables
 ------------------
