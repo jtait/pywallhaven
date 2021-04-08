@@ -5,13 +5,12 @@ Unit tests for pywallhaven.wallhaven
 
 import json
 import os
-import time
 import unittest
 from datetime import datetime
 
-import responses
-import requests
 import dataclasses
+import requests
+import responses
 
 from pywallhaven import Wallpaper, Tag, UserSettings, Uploader, Wallhaven, Meta, Collection
 
@@ -78,7 +77,7 @@ class TestWallhaven(unittest.TestCase):
         api_key = 'testkeyisinvalid'
         w = Wallhaven(api_key=api_key)
         self.assertIsInstance(w, Wallhaven)
-        self.assertEqual(w._Wallhaven__api_key, api_key)
+        self.assertEqual(getattr(w, '_Wallhaven__api_key'), api_key)
 
 
 class TestUserSettingsEndpoint(unittest.TestCase):
@@ -116,6 +115,7 @@ class TestCollectionEndpoint(unittest.TestCase):
         with self.assertRaises(ValueError):
             w.get_collection(username, collection_id, purity='1111')
         with self.assertRaises(ValueError):
+            # noinspection PyTypeChecker
             w.get_collection(username, collection_id, page='-1')
 
 
@@ -133,21 +133,10 @@ class TestMockEndpoint(unittest.TestCase):
     @responses.activate
     def test_error_code_response(self):
         w = Wallhaven()
-        for e in [400, 404, 422]:
+        for e in [201, 400, 404, 422, 500, 502, 503]:
             responses.add(responses.GET, 'https://wallhaven.cc/api/v1/search', status=e)
             with self.assertRaises(requests.exceptions.RequestException):
                 w.search()
-            responses.reset()
-        for e in [500, 502, 503]:
-            responses.add(responses.GET, 'https://wallhaven.cc/api/v1/search', status=e)
-            with self.assertRaises(requests.exceptions.ConnectionError):
-                w.search()
-            responses.reset()
-        for e in [201]:
-            responses.add(responses.GET, 'https://wallhaven.cc/api/v1/search', status=e)
-            with self.assertRaises(requests.exceptions.HTTPError):
-                w.search()
-            responses.reset()
 
     @responses.activate
     def test_connection_error(self):
@@ -162,7 +151,7 @@ class TestMockEndpoint(unittest.TestCase):
             responses.GET, 'https://wallhaven.cc/api/v1/search', status=200, body=''
         )
         w = Wallhaven()
-        with self.assertRaises(json.decoder.JSONDecodeError):
+        with self.assertRaises(json.JSONDecodeError):
             w.search()
 
     @responses.activate
@@ -171,7 +160,7 @@ class TestMockEndpoint(unittest.TestCase):
             responses.GET, 'https://wallhaven.cc/api/v1/search', status=200, body='{}}'
         )
         w = Wallhaven()
-        with self.assertRaises(IOError):
+        with self.assertRaises(json.JSONDecodeError):
             w.search()
 
     @responses.activate
@@ -336,11 +325,14 @@ class TestPagedCollection(unittest.TestCase):
                     json=json.load(fp)
                 )
         w = Wallhaven()
+        wallpaper_list = []
         collection_pages = w.get_collection_pages(username, collection_id)
         for wallpapers, meta in collection_pages:
             self.assertIsInstance(meta, Meta)
             for w in wallpapers:
                 self.assertIsInstance(w, Wallpaper)
+            wallpaper_list.extend(wallpapers)
+        self.assertEqual(len(wallpaper_list), 72)
 
     def test_paged_collection_invalid_parameters(self):
         w = Wallhaven()
@@ -366,22 +358,56 @@ class TestPagedSearch(unittest.TestCase):
         self.addCleanup(self.responses.reset)
 
     @responses.activate
-    def test_paged_search(self):
-        # cheat a bit and reuse the collection pages for testing the generator
+    def test_paged_search_no_given_seed(self):
+        seed = "abc123"
         for i in range(1, 4):
-            with open(get_resource_file(os.path.join("test_paged_collection", f"page{i}.json")), 'r') as fp:
+            with open(get_resource_file(os.path.join("test_paged_search", f"with_seed_page_{i}.json")), 'r') as fp:
+                if i == 1:
+                    responses.add(
+                        responses.GET,
+                        f"https://wallhaven.cc/api/v1/search?page={i}",
+                        status=200,
+                        json=json.load(fp)
+                    )
+                else:
+                    responses.add(
+                        responses.GET,
+                        f"https://wallhaven.cc/api/v1/search?page={i}&seed={seed}",
+                        status=200,
+                        json=json.load(fp)
+                    )
+        w = Wallhaven()
+        wallpaper_list = []
+        pages = w.get_search_pages()
+        for wallpapers, meta in pages:
+            self.assertIsInstance(meta, Meta)
+            self.assertEqual(meta.seed, seed)
+            for w in wallpapers:
+                self.assertIsInstance(w, Wallpaper)
+            wallpaper_list.extend(wallpapers)
+        self.assertEqual(len(wallpaper_list), 72)
+
+    @responses.activate
+    def test_paged_search_with_seed(self):
+        seed = "abc123"
+        for i in range(1, 4):
+            with open(get_resource_file(os.path.join("test_paged_search", f"with_seed_page_{i}.json")), 'r') as fp:
                 responses.add(
                     responses.GET,
-                    f"https://wallhaven.cc/api/v1/search?page={i}",
+                    f"https://wallhaven.cc/api/v1/search?page={i}&seed={seed}",
                     status=200,
                     json=json.load(fp)
                 )
         w = Wallhaven()
-        pages = w.get_search_pages()
+        wallpaper_list = []
+        pages = w.get_search_pages(seed=seed)
         for wallpapers, meta in pages:
             self.assertIsInstance(meta, Meta)
+            self.assertEqual(meta.seed, seed)
             for w in wallpapers:
                 self.assertIsInstance(w, Wallpaper)
+            wallpaper_list.extend(wallpapers)
+        self.assertEqual(len(wallpaper_list), 72)
 
     def test_paged_collection_invalid_parameters(self):
         w = Wallhaven()
@@ -393,7 +419,7 @@ class TestPagedSearch(unittest.TestCase):
             next(w.get_search_pages(page='-1'))
 
 
-class TestRateLimiting(unittest.TestCase):
+class TestEndpointFunction(unittest.TestCase):
     def setUp(self):
         """
         Helps cleanup responses after test runs to ensure clean state.
@@ -405,22 +431,15 @@ class TestRateLimiting(unittest.TestCase):
         self.addCleanup(self.responses.reset)
 
     @responses.activate
-    def test_single_instance_call_more_than_limit(self):
-        with open(get_resource_file("test_user_collection.json"), 'r') as fp:
-            mock_json = json.load(fp)
-        username = 'test_user'
-        collection_id = 1
-        w = Wallhaven()
-
-        start_time = time.time()
-        for _ in range(46):
-
+    def test_get_endpoint(self):
+        url = "https://wallhaven.cc/api/v1/search"
+        with open(get_resource_file("test_search.json"), 'r') as fp:
             responses.add(
-                responses.GET, 'https://wallhaven.cc/api/v1/collections/{}/{}'.format(username, str(collection_id)),
+                responses.GET,
+                f"https://wallhaven.cc/api/v1/search",
                 status=200,
-                json=mock_json
+                json=json.load(fp)
             )
-            w.get_collection(username, collection_id, **{'page': 1})
-        end_time = time.time()
-
-        self.assertGreater(end_time - start_time, 60)
+        w = Wallhaven()
+        return_dict = w.get_endpoint(url)
+        self.assertIsInstance(return_dict, dict)

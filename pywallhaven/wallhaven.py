@@ -1,17 +1,12 @@
 """
 API wrapper functions and dataclasses to retrieve information using the API for wallhaven.cc.
 """
-
-import json
 import warnings
 from datetime import datetime
 from typing import List, Tuple, Dict, Union, Generator
 
 import requests
 from dataclasses import dataclass, field
-from requests.adapters import HTTPAdapter
-from urllib3.util import Retry
-from ratelimit import sleep_and_retry, limits
 
 from pywallhaven import util, exceptions
 
@@ -167,9 +162,9 @@ class Meta:
 
 class Wallhaven(object):
     """
-    .. versionchanged:: 0.3
-        Endpoint requests are now rate limited. The limit applies globally to all instances of :class:`Wallhaven`
-        The limit is 45 calls per minute, as per https://wallhaven.cc/help/api#limits
+    .. versionchanged:: 0.4
+        Requests are not rate limited.
+        To apply rate limiting, sub-class :class:`Wallhaven` and override :py:meth:`Wallhaven.get_endpoint`
 
     The main API reference object.  All calls are made from an instance of this.
 
@@ -178,40 +173,32 @@ class Wallhaven(object):
     :param api_key: An API key from the website. Will be sent in the headers of all requests.
     """
 
-    def __init__(self, api_key: str = None):
+    def __init__(self, api_key: str = ""):
         self.__api_key = api_key
-        if self.__api_key:
-            self.__headers = {"X-API-Key": self.__api_key}
-        else:
-            self.__headers = {}
 
-    @sleep_and_retry
-    @limits(calls=45, period=60)
-    def __get_endpoint(self, url):
-        with requests.Session() as s:
-            retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[429])
-            s.mount('https://', HTTPAdapter(max_retries=retries))
-            try:
-                r = s.get(url, headers=self.__headers)
-            except requests.exceptions.ConnectionError as e:
-                raise e
+    def get_endpoint(self, url) -> dict:
+        """
+        Utility method used by all endpoint requests in :class:`Wallhaven`. To apply rate limiting, override this method
+        in a custom sub-class of :class:`Wallhaven`.
 
-        if r.status_code in [400, 404, 422]:
-            raise requests.exceptions.RequestException('Bad Request for url {}'.format(url))
-        elif r.status_code in [500, 502, 503]:
-            raise requests.exceptions.ConnectionError('Server error {}'.format(str(r.status_code)))
-        elif r.status_code == 429:
-            raise exceptions.RateLimitError('API request speed limit reached')
+        This method can be used to retrieve an arbitrary URL, but is not intended to be called directly.
+
+        :param url: The URL to query - no checking is done at this point to ensure URL is valid
+        :return: If no errors, returns a :class:`dict` representation of the JSON response
+        :raises requests.exceptions.RequestException: If request fails, or if return code is not 200 or 429
+        :raises json.JSONDecodeError: if response is not valid JSON, including an empty response
+        :raises RateLimitError: if return code is 429
+        """
+
+        headers = {"X-API-Key": self.__api_key} if self.__api_key else {}
+        r = requests.get(url, headers=headers)
+
+        if r.status_code == 429:
+            raise exceptions.RateLimitError('API request rate limit exceeded')
         elif r.status_code != 200:
-            raise requests.exceptions.HTTPError('something broke')
+            raise requests.exceptions.RequestException(response=r)
         else:
-            try:
-                return r.json()
-            except json.decoder.JSONDecodeError as e:
-                if r.content:
-                    raise IOError('invalid content returned')
-                else:
-                    raise e
+            return r.json()
 
     def get_wallpaper(self, wallpaper_id: str) -> Wallpaper:
         """
@@ -221,7 +208,7 @@ class Wallhaven(object):
         :return: A :class:`Wallpaper` object
         """
         endpoint = 'https://wallhaven.cc/api/v1/w/{id}'.format(id=wallpaper_id)
-        wallpaper = Wallpaper(**self.__get_endpoint(endpoint).get('data'))
+        wallpaper = Wallpaper(**self.get_endpoint(endpoint).get('data'))
         return wallpaper
 
     def get_tag(self, tag_id: int) -> Tag:
@@ -232,7 +219,7 @@ class Wallhaven(object):
         :return: A :class:`Tag` object
         """
         endpoint = 'https://wallhaven.cc/api/v1/tag/{id}'.format(id=tag_id)
-        tag = Tag(**self.__get_endpoint(endpoint).get('data'))
+        tag = Tag(**self.get_endpoint(endpoint).get('data'))
         return tag
 
     def get_user_settings(self) -> UserSettings:
@@ -245,7 +232,7 @@ class Wallhaven(object):
         if not self.__api_key:
             raise AttributeError('no API key supplied')
         endpoint = 'https://wallhaven.cc/api/v1/settings'
-        settings = UserSettings(**self.__get_endpoint(endpoint).get('data'))
+        settings = UserSettings(**self.get_endpoint(endpoint).get('data'))
         return settings
 
     def get_collections(self, username: str = None) -> List[Collection]:
@@ -266,7 +253,7 @@ class Wallhaven(object):
             else:
                 raise AttributeError('no API key or username supplied')
 
-        search_result = self.__get_endpoint(endpoint)
+        search_result = self.get_endpoint(endpoint)
         collections = search_result.get('data', [])
         if collections:
             collections = [Collection(**x) for x in collections]
@@ -299,7 +286,7 @@ class Wallhaven(object):
             endpoint += util.create_parameter_string(**kwargs, page=page)
         except ValueError as e:
             raise e
-        search_result = self.__get_endpoint(endpoint)
+        search_result = self.get_endpoint(endpoint)
         wallpapers = [Wallpaper(**x) for x in search_result.get('data')]
         meta = Meta(**search_result.get('meta'))
         return wallpapers, meta
@@ -335,7 +322,7 @@ class Wallhaven(object):
             endpoint += util.create_parameter_string(**kwargs, page=page)
         except ValueError as e:
             raise e
-        search_result = self.__get_endpoint(endpoint)
+        search_result = self.get_endpoint(endpoint)
         wallpapers = [Wallpaper(**x) for x in search_result.get('data')]
         meta = Meta(**search_result.get('meta'))
         return wallpapers, meta
@@ -343,6 +330,9 @@ class Wallhaven(object):
     def get_search_pages(self, **kwargs) -> Generator[Tuple[List[Wallpaper], Meta], None, None]:
         """
         .. versionadded:: 0.2
+
+        .. versionchanged:: 0.4
+            Now correctly uses the returned seed (if present) to continue future requests.
 
         Makes a search using the given kwargs. The allowed parameters are described at
         https://wallhaven.cc/help/api#search.
@@ -374,13 +364,20 @@ class Wallhaven(object):
 
         last_page = 1
         current_page = 1
+        try:
+            seed = kwargs.pop('seed')
+        except KeyError:
+            seed = None
 
         while current_page <= last_page:
             try:
-                endpoint = search_endpoint + util.create_parameter_string(**kwargs, page=current_page)
+                if seed is not None:
+                    endpoint = search_endpoint + util.create_parameter_string(**kwargs, page=current_page, seed=seed)
+                else:
+                    endpoint = search_endpoint + util.create_parameter_string(**kwargs, page=current_page)
             except ValueError as e:
                 raise e
-            search_result = self.__get_endpoint(endpoint)
+            search_result = self.get_endpoint(endpoint)
             wallpapers = [Wallpaper(**x) for x in search_result.get('data')]
             meta = Meta(**search_result.get('meta'))
 
@@ -388,6 +385,7 @@ class Wallhaven(object):
 
             last_page = meta.last_page
             current_page += 1
+            seed = meta.seed
 
     def get_collection_pages(
             self, username: str, collection_id: int, **kwargs
@@ -426,7 +424,7 @@ class Wallhaven(object):
                 endpoint = collections_endpoint + util.create_parameter_string(**kwargs, page=current_page)
             except ValueError as e:
                 raise e
-            search_result = self.__get_endpoint(endpoint)
+            search_result = self.get_endpoint(endpoint)
             wallpapers = [Wallpaper(**x) for x in search_result.get('data')]
             meta = Meta(**search_result.get('meta'))
 

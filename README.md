@@ -11,15 +11,18 @@ This project and its author has no affiliation with [wallhaven.cc](https://wallh
 
 Compatibility with the wallhaven.cc API is done on a best-effort basis, but changes to the API may not be immediately accounted for in this library. Any compatibilty issues should be raised in the project's [issue tracker](https://github.com/jtait/pywallhaven/issues).
 
-#### Known Issues
-- Seeds: The seed parameter doesn't work for random searches. It is passed through to the API call, but it appears that the API ignores the given seed. The seed that is returned in the Meta object is random, and therefore cannot be used over multiple pages of random search. This is an issue with wallhaven.cc, not this library.
+#### Wallhaven Issues
+Some issues are caused by problems with [wallhaven.cc](https://wallhaven.cc/), not _pywallhaven_. The known issues that affect API usage are tracked with the "wallhaven issue" label.
+
+[View the List](https://github.com/jtait/pywallhaven/labels/wallhaven%20issue)
+
+#### Notes
+- Wallhaven limits all requests to 45 per minute, not just API calls. This means that if you use this library to make API calls and then implement other functionality that makes requests to the site (e.g. to download an image), those requests are included in the limit.
 
 #### Dependencies
 This project uses these libraries:
 - [requests](https://pypi.org/project/requests/)
-- [urllib3](https://pypi.org/project/urllib3/)
 - [dataclasses](https://pypi.org/project/dataclasses/) (for Python 3.6)
-- [ratelimit](https://pypi.org/project/ratelimit/)
 - [responses](https://pypi.org/project/responses/) (for testing only)
 
 #### Links
