@@ -1,0 +1,12 @@
+# this file lists requirements exclusively for development
+# not all listed files are required to use this library
+# installing via pip from pypi.org should include all the needed requirements
+# look in setup.cfg under 'install_requires' for a specific list
+
+backoff==1.10.0
+m2r2==0.2.7
+pyrate-limiter==2.3.0
+requests==2.25.1
+responses==0.13.2
+Sphinx==3.5.3
+sphinx-rtd-theme==0.5.2
